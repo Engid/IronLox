@@ -71,7 +71,7 @@ public class Lox
                                        ^-- Here.
          */
 
-        System.Console.Error.WriteLine($"[line {line}] Error{}: {msg}");
+        System.Console.Error.WriteLine($"[line {line}] Error{where}: {msg}");
         _hadError = true;
     }
 }

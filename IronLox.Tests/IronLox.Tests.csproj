@@ -20,4 +20,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\IronLox\IronLox.csproj" />
+  </ItemGroup>
+
 </Project>

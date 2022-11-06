@@ -66,6 +66,8 @@ public sealed class Scanner
                 }
                 break;
 
+
+
             case ' ':
             case '\r':
             case '\t':
