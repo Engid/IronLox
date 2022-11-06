@@ -57,7 +57,7 @@ public class Lox
         }
     }
 
-    static void Error(int line, string msg)
+    public static void Error(int line, string msg)
     {
         ReportError(line, "", msg);
     }

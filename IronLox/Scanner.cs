@@ -1,5 +1,5 @@
 ﻿namespace IronLox;
-
+using static TokenType; 
 public sealed class Scanner
 {
     private readonly string source;
@@ -21,7 +21,7 @@ public sealed class Scanner
             ScanToken();
         }
 
-        tokens.Add(new(TokenType.EOF, line, "", null));
+        tokens.Add(new(EOF, line, "", null));
         return tokens;
     }
 
@@ -31,18 +31,55 @@ public sealed class Scanner
 
         switch (c)
         {
-            case '(': AddToken(TokenType.LEFT_PAREN);   break;
-            case ')': AddToken(TokenType.RIGHT_PAREN);  break;
-            case '{': AddToken(TokenType.LEFT_BRACE);   break;
-            case '}': AddToken(TokenType.RIGHT_BRACE);  break;
-            case ',': AddToken(TokenType.COMMA);        break;
-            case '.': AddToken(TokenType.DOT);          break;
-            case '-': AddToken(TokenType.MINUS);        break;
-            case '+': AddToken(TokenType.PLUS);         break;
-            case ';': AddToken(TokenType.SEMICOLON);    break;
-            case '*': AddToken(TokenType.STAR);         break;
+            case '(': AddToken(LEFT_PAREN);   break;
+            case ')': AddToken(RIGHT_PAREN);  break;
+            case '{': AddToken(LEFT_BRACE);   break;
+            case '}': AddToken(RIGHT_BRACE);  break;
+            case ',': AddToken(COMMA);        break;
+            case '.': AddToken(DOT);          break;
+            case '-': AddToken(MINUS);        break;
+            case '+': AddToken(PLUS);         break;
+            case ';': AddToken(SEMICOLON);    break;
+            case '*': AddToken(STAR);         break;
 
-            default: break;
+            case '!':
+                AddToken(Match('=') ? BANG_EQUAL : BANG); 
+                break;
+            case '=':
+                AddToken(Match('=') ? EQUAL_EQUAL : EQUAL);
+                break;
+            case '<':
+                AddToken(Match('=') ? LESS_EQUAL : LESS);
+                break;
+            case '>':
+                AddToken(Match('=') ? GREATER_EQUAL : GREATER);
+                break;
+
+            case '/':
+                if(Match('/'))
+                {
+                    while (Peek() != '\n' && NotAtEnd) Advance();
+                }
+                else
+                {
+                    AddToken(SLASH);
+                }
+                break;
+
+            case ' ':
+            case '\r':
+            case '\t':
+                // Ignore whitespace
+                break;
+
+            case '\n':
+                line++;
+                break;
+
+            default:
+                //TODO: "Coalescing a run of invalid characters into a single error would give a nicer user experience" -Bob
+                Lox.Error(line, $"Unexpexted character: {c}");
+                break;
         }
 
 
@@ -57,6 +94,22 @@ public sealed class Scanner
         tokens.Add(new(type, line, text, literal));
     }
 
+    private bool Match(char expected)
+    {
+        if(IsAtEnd) return false;
+
+        if(source[current] != expected) return false;
+
+        current++;
+        return true;
+    }
+
+    private char Peek()
+    {
+        if (IsAtEnd) return '\0';
+
+        return source[current];
+    }
 
     private bool IsAtEnd => current >= source.Length;
     private bool NotAtEnd => !IsAtEnd;
