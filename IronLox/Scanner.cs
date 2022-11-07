@@ -56,43 +56,140 @@ public sealed class Scanner
                 break;
 
             case '/':
-                if(Match('/'))
+                if(Match('/')) // line comment 
                 {
                     while (Peek() != '\n' && NotAtEnd) Advance();
                 }
-                else
+                else // division 
                 {
                     AddToken(SLASH);
                 }
                 break;
 
 
-
+            // Whitespace
             case ' ':
             case '\r':
             case '\t':
                 // Ignore whitespace
                 break;
 
+            // New Line
             case '\n':
                 line++;
                 break;
 
+            case '"': StringToken(); break;
+
             default:
-                //TODO: "Coalescing a run of invalid characters into a single error would give a nicer user experience" -Bob
-                Lox.Error(line, $"Unexpexted character: {c}");
+
+                if (IsDigit(c))
+                {
+                    NumberToken();
+                }
+                else if(IsAlpha(c))
+                {
+                    IdentifierToken();
+                }
+                else
+                {
+                    //TODO: "Coalescing a run of invalid characters into a single error would give a nicer user experience" -Bob
+                    Lox.Error(line, $"Unexpexted character: {c}");
+                }
                 break;
         }
-
-
     }
+
+    private bool IsAlpha(char c)
+    {
+        return  (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                 c == '_';
+    }
+
+    private bool IsDigit(char c) => c >= '0' && c <= '9';
+
+    private bool IsAlphaNumeric(char c) => IsAlpha(c) || IsDigit(c);
+
+    private void IdentifierToken()
+    {
+        while (IsAlphaNumeric(Peek())) Advance();
+
+        string text = source.SubStr(start, current);
+        
+        TokenType type = FindKeyword(text) ?? IDENTIFIER;
+
+        AddToken(type);
+    }
+
+    private void NumberToken()
+    {
+        while (IsDigit(Peek())) Advance();
+
+        if(Peek() == '.' && IsDigit(PeekNext()))
+        {
+            Advance();
+
+            while (IsDigit(Peek())) Advance();
+        }
+
+        AddToken(NUMBER, double.Parse(source.SubStr(start, current)));
+    }
+
+    // Note: doesn't support excape chars
+    private void StringToken()
+    {
+        while (Peek() != '"' && NotAtEnd)
+        {
+            if (Peek() == '\n') line++; // support multiline strings for some reason :) 
+            Advance();
+        }
+
+        if (IsAtEnd)
+        {
+            Lox.Error(line, "Unterminated string.");
+            return;
+        }
+
+        // Eat the closing ".
+        Advance();
+
+        // Trim surrounding quotes
+        string val = source.SubStr(start + 1, current - 1);
+        AddToken(STRING, val);
+    }
+
+    private TokenType? FindKeyword(string lexeme) =>
+        lexeme switch
+        {
+            "and"   => AND,
+            "class" => CLASS,
+            "else"  => ELSE,
+            "false" => FALSE,
+            "for"   => FOR,
+            "fun"   => FUN,
+            "if"    => IF,
+            "nil"   => NIL,
+            "or"    => OR,
+            "print" => PRINT,
+            "return"=> RETURN,
+            "super" => SUPER,
+            "this"  => THIS,
+            "true"  => TRUE,
+            "var"   => VAR,
+            "while" => WHILE,
+            _ => null
+
+        };
+
+    //-----------SCANNER MECHANICS---------------//
 
     private char Advance() => source[current++];
     
 
     private void AddToken(TokenType type, object? literal = null)
     {
-        string text = source.Substring(start, current);
+        string text = source.SubStr(start, current);
         tokens.Add(new(type, line, text, literal));
     }
 
@@ -111,6 +208,12 @@ public sealed class Scanner
         if (IsAtEnd) return '\0';
 
         return source[current];
+    }
+
+    private char PeekNext()
+    {
+        if (current + 1 >= source.Length) return '\0';
+        return source[current + 1];
     }
 
     private bool IsAtEnd => current >= source.Length;
