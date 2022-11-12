@@ -61,6 +61,19 @@ public class Lox
     {
         ReportError(line, "", msg);
     }
+
+    public static void Error(Token token, string message)
+    {
+        if(token.Type == TokenType.EOF)
+        {
+            ReportError(token.Line, " at end", message);
+        }
+        else
+        {
+            ReportError(token.Line, $"at '{token.Lexeme}'", message);
+        }
+    }
+
     static void ReportError(int line, string where, string msg)
     {
         //todo:
