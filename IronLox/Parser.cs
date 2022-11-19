@@ -18,6 +18,18 @@ public sealed class Parser
         this.tokens = tokens;
     }
 
+    public Expr? Parse()
+    {
+        try
+        {
+            return Expression();
+        }
+        catch (ParseError error)
+        {
+            return null;
+        }
+    }
+
     private Expr Expression() => Equality();
 
     private Expr Equality()
@@ -33,6 +45,8 @@ public sealed class Parser
 
         return expr;
     }
+
+
 
     private Expr Comparison()
     {
@@ -104,7 +118,7 @@ public sealed class Parser
             return new Grouping(expr);
         }
 
-        return null; // shouldn't happen? 
+        throw Error(Peek(), "Expect expression.");
     }
 
 
@@ -130,7 +144,7 @@ public sealed class Parser
 
     private bool Check(TokenType type)
     {
-        if(NotAtEnd) return false;
+        if(IsAtEnd) return false;
 
         return Peek().Type == type;
     }
@@ -150,5 +164,30 @@ public sealed class Parser
     {
         Lox.Error(token, message);
         return new ParseError(message);
+    }
+
+    private void Synchronize()
+    {
+        Advance();
+
+        while (NotAtEnd)
+        {
+            if (Previous.Type == SEMICOLON) return;
+
+            switch (Peek().Type)
+            {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+
+            Advance();
+        }
     }
 }

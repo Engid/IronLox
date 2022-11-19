@@ -50,11 +50,12 @@ public class Lox
     {
         var scanner = new Scanner(source);
         var tokens = scanner.ScanTokens();
+        Parser parser = new Parser(tokens);
+        Expr? expression = parser.Parse();
 
-        foreach(var token in tokens)
-        {
-            Console.WriteLine(token);
-        }
+        if (_hadError || expression is null) return;
+
+        Console.WriteLine(expression.PrintAst());
     }
 
     public static void Error(int line, string msg)
@@ -70,7 +71,7 @@ public class Lox
         }
         else
         {
-            ReportError(token.Line, $"at '{token.Lexeme}'", message);
+            ReportError(token.Line, $" at '{token.Lexeme}'", message);
         }
     }
 
