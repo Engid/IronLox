@@ -46,8 +46,6 @@ public sealed class Parser
         return expr;
     }
 
-
-
     private Expr Comparison()
     {
         Expr expr = Term();

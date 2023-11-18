@@ -19,7 +19,7 @@ namespace IronLox.Tests
         }
 
         [Fact]
-        public void MultpiplicationExpr()
+        public void MultiplicationExpr()
         {
             var expr = new Binary(
                 new Unary(new Token(MINUS, 1, "-"), new Literal(123)), 
