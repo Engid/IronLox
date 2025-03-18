@@ -6,13 +6,14 @@ public class Interpreter
 {
     public static object? EvalUnary(Unary u)
     {
-        var right = u.Right.Eval();
-
-        switch(u.Operator.Type)
+        switch (u.Operator.Type)
         {
             case MINUS:
-                return -(double)right;
-            
+                {
+                    var right = u.Right.Eval() ?? throw new Exception("Right operand is null");
+                    return -(double)right;
+                }
+
             case BANG:
                 return !IsTruthy(u);
         }
@@ -21,17 +22,18 @@ public class Interpreter
     }
 
     private static bool IsTruthy(object o) => o switch
-        {
-            null => false,
-            bool b => b, 
-            _ => true,
-        };
-    
+    {
+        null => false,
+        bool b => b,
+        _ => true,
+    };
+
 
     public static object? EvalBinary(Binary expr)
     {
-        var left = expr.Left.Eval();
-        var right = expr.Right.Eval();
+        // TODO: make a better error handling system
+        var left = expr.Left.Eval() ?? throw new Exception("Left operand is null");
+        var right = expr.Right.Eval() ?? throw new Exception("Right operand is null");
 
         switch (expr.Operator.Type)
         {
@@ -58,6 +60,6 @@ public static class ExprInterpExt
             Grouping g => Interpreter.EvalGrouping(g),
             Literal l => Interpreter.EvalLiteral(l),
             Unary u => Interpreter.EvalUnary(u),
-        }; 
+        };
 
 }

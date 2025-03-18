@@ -1,11 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 
 namespace IronLox;
 
-[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Marker Interface")]
-public interface Expr {}
+public abstract record Expr { }
 
 public record Literal(object? Value) : Expr;
 
@@ -16,6 +13,10 @@ public record Binary(Expr Left, Token Operator, Expr Right) : Expr;
 public record Grouping(Expr Expression) : Expr;
 
 
+/// <summary>
+///  This extension class mimics the visitor pattern
+///  but is more concise and easier to use.
+/// </summary>
 public static class ExprProcessor
 {
     public static string PrintAst(this Expr expr) =>
