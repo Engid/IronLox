@@ -4,6 +4,18 @@ namespace IronLox;
 
 public class Interpreter
 {
+    public void Interpret(Expr expression)
+    {
+        try
+        {
+            object? value = expression.Eval();
+            Console.WriteLine(Stringify(value));
+        }
+        catch (RuntimeError e)
+        {
+            Lox.RuntimeError(e);
+        }
+    }
     public static object? EvalUnary(Unary u)
     {
         var right = u.Right.Eval();
@@ -24,7 +36,6 @@ public class Interpreter
 
     public static object? EvalBinary(Binary expr)
     {
-        // TODO: make a better error handling system
         var left = expr.Left.Eval();
         var right = expr.Right.Eval();
 
@@ -33,24 +44,32 @@ public class Interpreter
             case MINUS:
                 {
                     var (l, r) = CheckNumberOperands(expr.Operator, left, right);
-                    return (double)l - (double)r;
+                    return l - r;
                 }
             case PLUS:
-                if (left is double && right is double)
-                    return (double)left + (double)right;
+                {
+                    if (left is double && right is double)
+                    {
+                        return (double)left + (double)right;
+                    }
 
-                if (left is string && right is string)
-                    return (string)left + (string)right;
+                    if (left is string && right is string)
+                    {
+                        return (string)left + (string)right;
+                    }
 
-                throw new Exception("Operands must be two numbers or two strings");
+                    throw new RuntimeError(expr.Operator, "Plus requires numbers or strings");
+                }
 
             case SLASH:
                 {
-
+                    var (l, r) = CheckNumberOperands(expr.Operator, left, right);
+                    return (double)l / (double)r;
                 }
             case STAR:
                 {
-
+                    var (l, r) = CheckNumberOperands(expr.Operator, left, right);
+                    return (double)l * (double)r;
                 }
 
             case GREATER:
@@ -85,6 +104,12 @@ public class Interpreter
 
     public static object? EvalLiteral(Literal l) => l.Value;
 
+    // -----PRIVATES-----
+    private string Stringify(object? o)
+    {
+        // TODO: make better formatting for decimal
+        return o?.ToString() ?? "nil";
+    }
 
     private static bool IsTruthy(object? o) => o switch
     {
@@ -124,6 +149,8 @@ public class RuntimeError : Exception
     }
 }
 
+public class EvalError(string msg) : Exception(msg);
+
 public static class ExprInterpExt
 {
     public static object? Eval(this Expr expr) =>
@@ -133,6 +160,7 @@ public static class ExprInterpExt
             Grouping g => Interpreter.EvalGrouping(g),
             Literal l => Interpreter.EvalLiteral(l),
             Unary u => Interpreter.EvalUnary(u),
+            _ => throw new EvalError($"Expression not defined: {expr}")
         };
 
 }
