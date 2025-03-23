@@ -6,6 +6,8 @@ public abstract record Expr { }
 
 public record Literal(object? Value) : Expr;
 
+public record Variable(Token Name) : Expr;
+
 public record Unary(Token Operator, Expr Right) : Expr;
 
 public record Binary(Expr Left, Token Operator, Expr Right) : Expr;

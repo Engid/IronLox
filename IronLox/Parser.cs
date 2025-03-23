@@ -31,10 +31,38 @@ public sealed class Parser
 
         while (!IsAtEnd)
         {
-            statements.Add(Statement());
+            statements.Add(Declaration());
         }
 
         return statements;
+    }
+
+    private Stmt Declaration()
+    {
+        try
+        {
+            if (Match(VAR)) return VarDecl();
+            return Statement();
+        }
+        catch (ParseError error)
+        {
+            Synchronize();
+            return null; // hey why we gotta do this Bob?
+        }
+    }
+
+    private Stmt VarDecl()
+    {
+        Token name = Consume(IDENTIFIER, "Expect variable name.");
+
+        Expr? initializer = null;
+        if (Match(EQUAL))
+        {
+            initializer = Expression();
+        }
+
+        Consume(SEMICOLON, "Expect ';' after variable declaration");
+        return new Var(name, initializer);
     }
 
     private Stmt Statement()
@@ -135,6 +163,11 @@ public sealed class Parser
         if (Match(NUMBER, STRING))
         {
             return new Literal(Previous.Literal);
+        }
+
+        if (Match(IDENTIFIER))
+        {
+            return new Variable(Previous);
         }
 
         if (Match(LEFT_PAREN))
