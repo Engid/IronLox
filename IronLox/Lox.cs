@@ -60,16 +60,16 @@ public class Lox
 
     private static void Run(string source)
     {
-        var scanner = new Scanner(source);
-        var tokens = scanner.ScanTokens();
-        Parser parser = new Parser(tokens);
-        Expr? expression = parser.Parse();
+        Scanner scanner = new(source);
+        List<Token> tokens = scanner.ScanTokens();
+        Parser parser = new(tokens);
+        List<Stmt> statements = parser.Parse();
 
-        if (_hadError || expression is null) return;
+        if (_hadError) return;
 
-        _interpreter.Interpret(expression);
+        _interpreter.Interpret(statements);
 
-        Console.WriteLine(expression.PrintAst());
+        //Console.WriteLine(expression.PrintAst());
     }
 
     public static void Error(int line, string msg)
@@ -99,7 +99,7 @@ public class Lox
                                        ^-- Here.
          */
 
-        System.Console.Error.WriteLine($"[line {line}] Error{where}: {msg}");
+        Console.Error.WriteLine($"[line {line}] Error{where}: {msg}");
         _hadError = true;
     }
 }

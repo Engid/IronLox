@@ -4,12 +4,14 @@ namespace IronLox;
 
 public class Interpreter
 {
-    public void Interpret(Expr expression)
+    public void Interpret(IEnumerable<Stmt> statements)
     {
         try
         {
-            object? value = expression.Eval();
-            Console.WriteLine(Stringify(value));
+            foreach (var stmt in statements)
+            {
+                stmt.Execute();
+            }
         }
         catch (RuntimeError e)
         {
@@ -104,12 +106,15 @@ public class Interpreter
 
     public static object? EvalLiteral(Literal l) => l.Value;
 
-    // -----PRIVATES-----
-    private string Stringify(object? o)
+    public static string Stringify(object? o)
     {
         // TODO: make better formatting for decimal
         return o?.ToString() ?? "nil";
     }
+
+
+
+    // -----PRIVATES-----
 
     private static bool IsTruthy(object? o) => o switch
     {
@@ -151,16 +156,32 @@ public class RuntimeError : Exception
 
 public class EvalError(string msg) : Exception(msg);
 
-public static class ExprInterpExt
+public static class InterpExt
 {
-    public static object? Eval(this Expr expr) =>
-        expr switch
-        {
-            Binary b => Interpreter.EvalBinary(b),
-            Grouping g => Interpreter.EvalGrouping(g),
-            Literal l => Interpreter.EvalLiteral(l),
-            Unary u => Interpreter.EvalUnary(u),
-            _ => throw new EvalError($"Expression not defined: {expr}")
-        };
+    public static object? Eval(this Expr expr) => expr switch
+    {
+        Binary b => Interpreter.EvalBinary(b),
+        Grouping g => Interpreter.EvalGrouping(g),
+        Literal l => Interpreter.EvalLiteral(l),
+        Unary u => Interpreter.EvalUnary(u),
+        _ => throw new EvalError($"Expression not defined: {expr}")
+    };
 
+    public static void Execute(this Stmt stmt)
+    {
+        switch (stmt)
+        {
+            case Print p:
+                {
+                    object? value = p.expression.Eval();
+                    Console.WriteLine(Interpreter.Stringify(value));
+                    break;
+                }
+            case StmtExpression se:
+                {
+                    se.expression.Eval();
+                    break;
+                }
+        }
+    }
 }

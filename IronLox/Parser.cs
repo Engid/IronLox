@@ -1,14 +1,12 @@
 ﻿using System.Collections.Concurrent;
+using System.Data;
 using static IronLox.TokenType;
 
 
 namespace IronLox;
 public sealed class Parser
 {
-    private class ParseError : Exception 
-    { 
-        public ParseError(string message) : base(message) { } 
-    }
+    private class ParseError(string message) : Exception(message);
 
     private readonly List<Token> tokens;
     private int current = 0;
@@ -18,16 +16,46 @@ public sealed class Parser
         this.tokens = tokens;
     }
 
-    public Expr? Parse()
+    public List<Stmt> Parse()
     {
-        try
+        // try
+        // {
+        //     return Expression();
+        // }
+        // catch (ParseError error)
+        // {
+        //     return null;
+        // }
+
+        List<Stmt> statements = new();
+
+        while (!IsAtEnd)
         {
-            return Expression();
+            statements.Add(Statement());
         }
-        catch (ParseError error)
-        {
-            return null;
-        }
+
+        return statements;
+    }
+
+    private Stmt Statement()
+    {
+        if (Match(PRINT)) return PrintStatement();
+
+        return ExpressionStatement();
+    }
+
+    private Stmt PrintStatement()
+    {
+        Expr value = Expression();
+        Consume(SEMICOLON, "Expect ';' after value.");
+        return new Print(value);
+    }
+
+    private Stmt ExpressionStatement()
+    {
+        Expr expr = Expression();
+        Consume(SEMICOLON, "Expect ';' after value.");
+        return new StmtExpression(expr);
     }
 
     private Expr Expression() => Equality();
@@ -36,7 +64,7 @@ public sealed class Parser
     {
         Expr expr = Comparison();
 
-        while(Match(BANG_EQUAL, EQUAL_EQUAL))
+        while (Match(BANG_EQUAL, EQUAL_EQUAL))
         {
             Token op = Previous;
             Expr right = Comparison();
@@ -50,7 +78,7 @@ public sealed class Parser
     {
         Expr expr = Term();
 
-        while(Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL))
+        while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL))
         {
             Token op = Previous;
             Expr right = Term();
@@ -60,7 +88,7 @@ public sealed class Parser
         return expr;
     }
 
-    private Expr Term() 
+    private Expr Term()
     {
         Expr expr = Factor();
 
@@ -73,22 +101,22 @@ public sealed class Parser
 
         return expr;
     }
-    private Expr Factor() 
-    { 
+    private Expr Factor()
+    {
         Expr expr = Unary();
 
-        while(Match(SLASH, STAR))
+        while (Match(SLASH, STAR))
         {
             Token op = Previous;
             Expr right = Unary();
             expr = new Binary(expr, op, right);
         }
 
-        return expr; 
+        return expr;
     }
-    private Expr Unary() 
+    private Expr Unary()
     {
-        if(Match(BANG, MINUS))
+        if (Match(BANG, MINUS))
         {
             Token op = Previous;
             Expr right = Unary();
@@ -98,13 +126,13 @@ public sealed class Parser
         return Primary();
     }
 
-    private Expr Primary() 
+    private Expr Primary()
     {
-        if(Match(FALSE)) return new Literal(false);
-        if(Match(TRUE)) return new Literal(true);
-        if(Match(NIL)) return new Literal(null);
+        if (Match(FALSE)) return new Literal(false);
+        if (Match(TRUE)) return new Literal(true);
+        if (Match(NIL)) return new Literal(null);
 
-        if(Match(NUMBER, STRING))
+        if (Match(NUMBER, STRING))
         {
             return new Literal(Previous.Literal);
         }
@@ -122,7 +150,7 @@ public sealed class Parser
 
     private bool Match(params TokenType[] tokens)
     {
-        foreach(TokenType t in tokens)
+        foreach (TokenType t in tokens)
         {
             if (Check(t))
             {
@@ -135,21 +163,21 @@ public sealed class Parser
 
     private Token Consume(TokenType type, string message)
     {
-        if(Check(type)) return Advance();
+        if (Check(type)) return Advance();
 
         throw Error(Peek(), message);
     }
 
     private bool Check(TokenType type)
     {
-        if(IsAtEnd) return false;
+        if (IsAtEnd) return false;
 
         return Peek().Type == type;
     }
 
     private Token Advance()
     {
-        if(NotAtEnd) current++;
+        if (NotAtEnd) current++;
         return Previous;
     }
 
