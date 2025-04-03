@@ -4,13 +4,15 @@ namespace IronLox;
 
 public class Interpreter
 {
+    private Environment _env = new();
+
     public void Interpret(IEnumerable<Stmt> statements)
     {
         try
         {
             foreach (var stmt in statements)
             {
-                stmt.Execute();
+                Execute(stmt);
             }
         }
         catch (RuntimeError e)
@@ -18,9 +20,9 @@ public class Interpreter
             Lox.RuntimeError(e);
         }
     }
-    public static object? EvalUnary(Unary u)
+    public object? EvalUnary(Unary u)
     {
-        var right = u.Right.Eval();
+        var right = Eval(u.Right);
 
         switch (u.Operator.Type)
         {
@@ -36,10 +38,10 @@ public class Interpreter
         return null;
     }
 
-    public static object? EvalBinary(Binary expr)
+    public object? EvalBinary(Binary expr)
     {
-        var left = expr.Left.Eval();
-        var right = expr.Right.Eval();
+        var left = Eval(expr.Left);
+        var right = Eval(expr.Right);
 
         switch (expr.Operator.Type)
         {
@@ -102,9 +104,30 @@ public class Interpreter
         return null;
     }
 
-    public static object? EvalGrouping(Grouping g) => g.Expression.Eval();
+    public object? EvalGrouping(Grouping g) => Eval(g.Expression);
 
-    public static object? EvalLiteral(Literal l) => l.Value;
+    public object? EvalLiteral(Literal l) => l.Value;
+
+
+    // ---- Statement Evaluation ----
+
+    public void EvalVarStmt(Var stmt)
+    {
+        object? value = null;
+        if (stmt.Init != null)
+        {
+            value = Eval(stmt.Init);
+        }
+        _env.Define(stmt.Name.Lexeme, value);
+
+        return;
+    }
+
+    public void EvalPrint(Print p)
+    {
+        object? value = Eval(p.expression);
+        Console.WriteLine(Stringify(value));
+    }
 
     public static string Stringify(object? o)
     {
@@ -112,7 +135,37 @@ public class Interpreter
         return o?.ToString() ?? "nil";
     }
 
+    // NOTE: we use pattern matching instead of visitor pattern. 
+    public object? Eval(Expr expr) => expr switch
+    {
+        Binary b => EvalBinary(b),
+        Grouping g => EvalGrouping(g),
+        Literal l => EvalLiteral(l),
+        Unary u => EvalUnary(u),
+        Variable v => _env.Get(v.Name),
+        _ => throw new EvalError($"Expression not defined: {expr}")
+    };
 
+    // NOTE: we use pattern matching instead of visitor pattern.
+    public void Execute(Stmt stmt)
+    {
+        switch (stmt)
+        {
+            case Print p:
+                EvalPrint(p);
+                break;
+
+            case StmtExpression se:
+                Eval(se.expression);
+                break;
+
+            case Var v:
+                EvalVarStmt(v);
+                break;
+
+            default: throw new Exception($"Statement not valid {stmt}");
+        }
+    }
 
     // -----PRIVATES-----
 
@@ -155,33 +208,3 @@ public class RuntimeError : Exception
 }
 
 public class EvalError(string msg) : Exception(msg);
-
-public static class InterpExt
-{
-    public static object? Eval(this Expr expr) => expr switch
-    {
-        Binary b => Interpreter.EvalBinary(b),
-        Grouping g => Interpreter.EvalGrouping(g),
-        Literal l => Interpreter.EvalLiteral(l),
-        Unary u => Interpreter.EvalUnary(u),
-        _ => throw new EvalError($"Expression not defined: {expr}")
-    };
-
-    public static void Execute(this Stmt stmt)
-    {
-        switch (stmt)
-        {
-            case Print p:
-                {
-                    object? value = p.expression.Eval();
-                    Console.WriteLine(Interpreter.Stringify(value));
-                    break;
-                }
-            case StmtExpression se:
-                {
-                    se.expression.Eval();
-                    break;
-                }
-        }
-    }
-}

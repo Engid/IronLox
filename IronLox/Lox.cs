@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace IronLox;
+﻿namespace IronLox;
 
 public class Lox
 {
@@ -19,7 +12,7 @@ public class Lox
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: IronLox [script]");
-            Environment.Exit(64);
+            System.Environment.Exit(64);
         }
         else if (args.Length == 1)
         {
@@ -42,8 +35,8 @@ public class Lox
         var text = File.ReadAllText(path);
         Run(text);
 
-        if (_hadError) Environment.Exit(65);
-        if (_hadRuntimeError) Environment.Exit(70);
+        if (_hadError) System.Environment.Exit(65);
+        if (_hadRuntimeError) System.Environment.Exit(70);
     }
 
     private static void RunPrompt()
